@@ -17,6 +17,6 @@ src
 
 ```
 
-Perform edits StyleXExample.tsx and see them take place! 
+Perform edits on `StyleXExample.tsx` and see them take place live.
 
 Everything should be working smoothly! 
