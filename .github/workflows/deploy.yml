@@ -1,49 +1,140 @@
-name: Deploy
+# Automating npm Package Publishing with GitHub Actions
+
+This guide will walk you through setting up a GitHub Action to automatically update your package version and publish it to npm when you push to the main branch or create a release.
+
+## Prerequisites
+
+- A GitHub repository for your npm package
+- An npm account
+- Your package code is ready for publishing
+
+## Step 1: Create an npm Access Token
+
+1. Log in to your npm account
+2. Go to "Access Tokens" in your account settings
+3. Click "Generate New Token"
+4. Select the type of token (Publish)
+5. Copy the generated token
+
+## Step 2: Add npm Token to GitHub Secrets
+
+1. In your GitHub repository, go to "Settings" > "Secrets and variables" > "Actions"
+2. Click "New repository secret"
+3. Name: `NPM_TOKEN`
+4. Value: Paste your npm access token
+5. Click "Add secret"
+
+## Step 3: Create GitHub Action Workflow
+
+1. In your repository, create a new file: `.github/workflows/npm-publish.yml`
+2. Copy and paste the following content:
+
+```yaml
+name: Publish Package to npm
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  release:
+    types: [created]
 
 jobs:
-  build:
-    name: Build
+  publish:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-
-      - name: Install dependencies
-        uses: bahmutov/npm-install@v1
-
-      - name: Build project
-        run: npm run build
-
-      - name: Upload production-ready build files
-        uses: actions/upload-artifact@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          name: production-files
-          path: ./dist
+          node-version: '18'
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - run: pnpm install
+      - run: pnpm test
+      - uses: JS-DevTools/npm-publish@v2
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+```
 
-  deploy:
-    name: Deploy
-    needs: build
+## Step 4: Configure Automatic Versioning (Optional)
+
+To automatically bump the version based on commit messages, you can use conventional commits and the `standard-version` package.
+
+1. Install `standard-version` as a dev dependency:
+   ```bash
+   pnpm add -D standard-version
+   ```
+
+2. Add a script to your `package.json`:
+   ```json
+   "scripts": {
+     "release": "standard-version"
+   }
+   ```
+
+3. Update your GitHub Action workflow (`.github/workflows/npm-publish.yml`) to include versioning:
+
+```yaml
+name: Publish Package to npm
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  publish:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v3
+      - uses: actions/checkout@v3
         with:
-          name: production-files
-          path: ./dist
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - run: pnpm install
+      - run: pnpm test
+      - name: Bump version
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          pnpm run release
+      - name: Push changes
+        uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          branch: ${{ github.ref }}
+      - uses: JS-DevTools/npm-publish@v2
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
+```
+
+## Usage
+
+With this setup:
+
+1. When you push to the `main` branch, the action will:
+   - Run your tests
+   - Bump the version (if you added the versioning step)
+   - Publish the package to npm
+
+2. Ensure your commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for automatic versioning:
+   - `fix:` for a patch version bump
+   - `feat:` for a minor version bump
+   - `BREAKING CHANGE:` in the commit body for a major version bump
+
+## Best Practices
+
+- Always test your package locally before pushing to main
+- Use feature branches and pull requests for development
+- Consider using pre-commit hooks to enforce commit message standards
+
+## Troubleshooting
+
+- If the action fails, check the workflow run in the "Actions" tab of your GitHub repository for error messages
+- Ensure your `NPM_TOKEN` is correctly set in GitHub Secrets
+- Verify that your `package.json` is valid and contains all necessary information
+
+Remember to adjust the Node.js version and any other specifics to match your project requirements.
