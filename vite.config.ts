@@ -5,6 +5,5 @@ import styleX from "vite-plugin-stylex"
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react(), styleX()],
-      base: "/crispy-umbrella/", // YOUR REPO NAME HERE
-
+      base: "/tsx-react-stylex-quickstart/", // YOUR REPO NAME HERE
 })
