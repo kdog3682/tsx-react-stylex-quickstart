@@ -1,14 +1,14 @@
 {
-    "name": "CrispyUmbrella",
+    "name": "${repo}",
     "repository": {
         "type": "git",
-        "url": "https://github.com/your-username/your-repo-name.git"
+        "url": "https://github.com/${username}/${repo}.git"
     },
-    "private": true,
+    "private": false,
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "vite",
+        "dev": "vite --open",
         "build": "tsc && vite build",
         "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
         "preview": "vite preview"
