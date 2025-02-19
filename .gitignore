@@ -1,3 +1,7 @@
+# package-lock.json should never show up.
+# Ignore all .env files
+*.env
+
 # Logs
 logs
 *.log
